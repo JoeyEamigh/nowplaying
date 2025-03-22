@@ -1,0 +1,16 @@
+{
+  "name": "now-playing-workspace",
+  "version": "0.0.0",
+  "license": "MIT",
+  "workspaces": [
+    "bindings"
+  ],
+  "scripts": {
+    "build": "cd bindings && bun run build",
+    "build:debug": "cd bindings && bun run build:debug",
+    "prepublishOnly": "cd bindings && bun run prepublishOnly",
+    "artifacts": "cd bindings && bun run artifacts",
+    "version": "cd bindings && bun run version"
+  },
+  "devDependencies": {}
+}

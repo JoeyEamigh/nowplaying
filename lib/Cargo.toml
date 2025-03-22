@@ -1,0 +1,54 @@
+[package]
+name = "nowplaying"
+version = "0.1.0"
+edition = "2024"
+default-run = "nowplaying"
+
+[dependencies]
+# macos
+objc2 = { version = "0.5.2", optional = true }
+objc2-foundation = { version = "0.2.2", features = ["all"], optional = true }
+block2 = { version = "0.5.1", optional = true }
+core-foundation = { version = "0.10.0", optional = true }
+dispatch2 = { version = "0.1.0", optional = true }
+# libloading = "0.8.6"
+
+# windows
+windows = { version = "0.59.0", features = [
+  "Media",
+  "Media_Control",
+  "Media_Playback",
+  "Foundation",
+  "Foundation_Collections",
+  "Storage_Streams",
+], optional = true }
+
+# linux
+zbus = { version = "5.5.0", features = ["tokio"], optional = true }
+zvariant = { version = "5.4.0", optional = true }
+
+# workspace
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+tokio = { workspace = true, features = ["full"] }
+
+# all
+derive_more = { version = "1.0.0", features = ["debug"] }
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = "1.0.137"
+thiserror = "2.0.11"
+tokio-util = "0.7.13"
+futures = "0.3.31"
+
+
+[features]
+default = ["linux"]
+macos = [
+  "dep:objc2",
+  "dep:objc2-foundation",
+  "dep:block2",
+  "dep:core-foundation",
+  "dep:dispatch2",
+]
+windows = ["dep:windows"]
+linux = ["dep:zbus", "dep:zvariant"]

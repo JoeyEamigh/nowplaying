@@ -1,0 +1,34 @@
+{
+  "name": "nowplaying",
+  "version": "0.0.0",
+  "license": "MIT",
+  "engines": {
+    "node": ">= 10.16.0 < 11 || >= 11.8.0 < 12 || >= 12.0.0"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "browser": "dist/browser.js",
+  "napi": {
+    "binaryName": "bindings",
+    "targets": [
+      "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-linux-musl",
+      "aarch64-pc-windows-msvc",
+      "x86_64-pc-windows-msvc",
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-linux-musl",
+      "universal-apple-darwin"
+    ]
+  },
+  "scripts": {
+    "build": "napi build --release --platform --strip --esm -d ./dist",
+    "build:debug": "napi build --esm -d ./dist",
+    "prepublishOnly": "napi prepublish -t npm",
+    "artifacts": "napi artifacts",
+    "version": "napi version"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^3.0.0-alpha.65"
+  }
+}
