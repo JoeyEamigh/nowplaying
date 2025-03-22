@@ -9,7 +9,7 @@ mod macos;
 #[cfg(feature = "windows")]
 mod windows;
 
-#[derive(Default, Debug, Serialize, Deserialize, Clone)]
+#[derive(Default, derive_more::Debug, Serialize, Deserialize, Clone)]
 pub struct NowPlaying {
   pub album: Option<String>,
   pub artist: Option<Vec<String>>,
@@ -28,11 +28,12 @@ pub struct NowPlaying {
   pub track_progress: Option<u32>,
   pub playback_rate: Option<f64>, // 1.0 = normal speed, 0.5 = half speed, 2.0 = double speed
   pub volume: u8,                 // percentage 0-100
+  pub device: Option<String>,     // Name of device that is playing the audio
+  pub id: Option<String>,         // A way to identify the current song (is used for certain actions)
+  pub device_id: Option<String>,  // a way to identify the current device if needed
+  pub url: Option<String>,        // the url of the current song
+  #[debug(skip)]
   pub thumbnail: Option<String>, // either a path on disk or a base64 encoding that includes data:image/png;base64, at the beginning
-  pub device: Option<String>,    // Name of device that is playing the audio
-  pub id: Option<String>,        // A way to identify the current song (is used for certain actions)
-  pub device_id: Option<String>, // a way to identify the current device if needed
-  pub url: Option<String>,       // the url of the current song
 }
 
 pub type StateTx = tokio::sync::mpsc::Sender<NowPlaying>;
@@ -99,5 +100,8 @@ pub enum Error {
   CommandCommunication(#[from] tokio::sync::mpsc::error::SendError<Command>),
   #[cfg(feature = "windows")]
   #[error(transparent)]
-  Windows(#[from] windows::core::Error),
+  Windows(#[from] windows::Error),
+  #[cfg(feature = "windows")]
+  #[error(transparent)]
+  JoinHandle(#[from] tokio::task::JoinError),
 }

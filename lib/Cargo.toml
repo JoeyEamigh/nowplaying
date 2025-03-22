@@ -22,6 +22,7 @@ windows = { version = "0.59.0", features = [
   "Foundation_Collections",
   "Storage_Streams",
 ], optional = true }
+base64 = { version = "0.22.1", optional = true }
 
 # linux
 zbus = { version = "5.5.0", features = ["tokio"], optional = true }
@@ -50,5 +51,5 @@ macos = [
   "dep:core-foundation",
   "dep:dispatch2",
 ]
-windows = ["dep:windows"]
+windows = ["dep:windows", "dep:base64"]
 linux = ["dep:zbus", "dep:zvariant"]
