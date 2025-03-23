@@ -194,15 +194,10 @@ impl PlayerSession {
 
         self.state.artist = Some(vec![props.Artist().unwrap_or_default().to_string()]);
 
-        // if let Ok(thumbnail) = self.fetch_thumbnail(&props).await {
-        //   self.state.thumbnail = Some(thumbnail);
-        // } else {
-        //   tracing::warn!("({}) failed to fetch thumbnail", &self.session_id);
-        // }
-
-        // TODO: actually get the thumbnail
-        if let Ok(thumbnail) = props.Thumbnail() {
-          tracing::debug!("({}) thumbnail: {:?}", self.session_id, thumbnail);
+        if let Ok(thumbnail) = self.fetch_thumbnail(&props).await {
+          self.state.thumbnail = Some(thumbnail);
+        } else {
+          tracing::warn!("({}) failed to fetch thumbnail", &self.session_id);
         }
       } else {
         tracing::trace!("({}) failed to await media properties", self.session_id);
@@ -286,21 +281,69 @@ impl PlayerSession {
     &self,
     props: &GlobalSystemMediaTransportControlsSessionMediaProperties,
   ) -> windows::core::Result<String> {
+    tracing::debug!("({}) fetching thumbnail", &self.session_id);
     use base64::prelude::*;
 
-    let stream = props.Thumbnail()?.to_owned().OpenReadAsync()?.await?;
-    let size = stream.Size()? as usize;
+    let stream_wrapper = ThumbnailStream::new(props).await?;
+    let mut buffer = vec![0u8; stream_wrapper.size as usize];
 
-    let mut buffer = vec![0u8; size];
+    let reader_wrapper = stream_wrapper.get_reader()?;
 
-    let input_stream = stream.GetInputStreamAt(0)?;
-    let reader = windows::Storage::Streams::DataReader::CreateDataReader(&input_stream)?;
+    reader_wrapper.reader.LoadAsync(stream_wrapper.size as u32)?.await?;
+    reader_wrapper.reader.ReadBytes(&mut buffer)?;
+    reader_wrapper.reader.Close()?;
 
-    reader.LoadAsync(size as u32)?.await?;
-    reader.ReadBytes(&mut buffer)?;
-    reader.Close()?;
+    Ok(format!("data:image/png;base64,{}", BASE64_STANDARD.encode(&buffer)))
+  }
+}
 
-    Ok(BASE64_STANDARD.encode(&buffer))
+struct ThumbnailStream {
+  pub stream: windows::Storage::Streams::IRandomAccessStreamWithContentType,
+  pub size: u64,
+}
+unsafe impl Send for ThumbnailStream {}
+
+impl ThumbnailStream {
+  pub async fn new(props: &GlobalSystemMediaTransportControlsSessionMediaProperties) -> windows::core::Result<Self> {
+    let reference = ThumbnailReference::new(props)?;
+    reference.get_stream().await
+  }
+
+  pub fn get_reader(&self) -> windows::core::Result<ThumbnailReader> {
+    let reader = ThumbnailReader::new(&self.stream)?;
+    Ok(reader)
+  }
+}
+
+struct ThumbnailReference {
+  pub reference: windows::Storage::Streams::IRandomAccessStreamReference,
+}
+unsafe impl Send for ThumbnailReference {}
+
+impl ThumbnailReference {
+  pub fn new(props: &GlobalSystemMediaTransportControlsSessionMediaProperties) -> windows::core::Result<Self> {
+    let reference = props.Thumbnail()?;
+    Ok(Self { reference })
+  }
+
+  pub async fn get_stream(self) -> windows::core::Result<ThumbnailStream> {
+    let stream = self.reference.OpenReadAsync()?.await?;
+    Ok(ThumbnailStream {
+      size: stream.Size()?,
+      stream,
+    })
+  }
+}
+
+struct ThumbnailReader {
+  pub reader: windows::Storage::Streams::DataReader,
+}
+unsafe impl Send for ThumbnailReader {}
+
+impl ThumbnailReader {
+  pub fn new(stream: &windows::Storage::Streams::IRandomAccessStreamWithContentType) -> windows::core::Result<Self> {
+    let reader = windows::Storage::Streams::DataReader::CreateDataReader(stream)?;
+    Ok(Self { reader })
   }
 }
 
