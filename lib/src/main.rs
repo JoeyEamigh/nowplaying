@@ -10,7 +10,6 @@ async fn main() -> nowplaying::Result<()> {
   let mut player = get_player(tx).await?;
 
   player.subscribe().await?;
-  // player.now_playing().await?;
 
   loop {
     tokio::select! {
