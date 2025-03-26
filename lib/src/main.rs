@@ -1,4 +1,4 @@
-use nowplaying::{Player, get_player};
+use nowplaying::get_player;
 
 mod monitoring;
 

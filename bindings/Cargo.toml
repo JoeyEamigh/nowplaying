@@ -1,6 +1,6 @@
 [package]
-name = "bindings"
-version = "1.0.0"
+name = "n-nowplaying"
+version = "0.1.0"
 edition = "2024"
 license = "MIT"
 
@@ -8,21 +8,24 @@ license = "MIT"
 crate-type = ["cdylib"]
 
 [dependencies]
+chrono = "0.4.40"
+
 nowplaying = { path = "../lib" }
 
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+derive_more = { workspace = true }
+tokio-util = { workspace = true }
+
 [dependencies.napi]
-version = "2"
+version = "3.0.0-alpha.33"
 default-features = false
 # see https://nodejs.org/api/n-api.html#node-api-version-matrix
-features = ["napi4"]
+features = ["napi4", "async"]
 
 [dependencies.napi-derive]
-version = "2"
+version = "3.0.0-alpha.29"
 features = ["type-def"]
 
 [build-dependencies]
 napi-build = "2"
-
-# [profile.release]
-# lto = true
-# strip = "symbols"

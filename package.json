@@ -1,16 +1,25 @@
 {
-  "name": "now-playing-workspace",
-  "version": "0.0.0",
-  "license": "MIT",
+  "name": "turbo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+  },
+  "devDependencies": {
+    "turbo": "^2.4.0",
+    "typescript": "5.7.3",
+    "@types/bun": "latest",
+    "prettier": "^3.4.2",
+    "prettier-plugin-organize-imports": "^4.1.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "packageManager": "bun@1.2.2",
   "workspaces": [
     "bindings"
-  ],
-  "scripts": {
-    "build": "cd bindings && bun run build",
-    "build:debug": "cd bindings && bun run build:debug",
-    "prepublishOnly": "cd bindings && bun run prepublishOnly",
-    "artifacts": "cd bindings && bun run artifacts",
-    "version": "cd bindings && bun run version"
-  },
-  "devDependencies": {}
+  ]
 }

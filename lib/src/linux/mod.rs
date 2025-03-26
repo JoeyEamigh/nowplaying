@@ -436,19 +436,20 @@ pub struct LinuxPlayer {
   _player_manager_handle: Option<JoinHandle<()>>,
 }
 
+#[async_trait::async_trait]
 impl Player for LinuxPlayer {
-  async fn init(tx: StateTx) -> Result<Self> {
+  async fn init(tx: StateTx) -> Result<Box<Self>> {
     tracing::debug!("initializing linux media player subsystem");
     let connection = Connection::session().await?;
 
-    Ok(Self {
+    Ok(Box::new(Self {
       connection,
       tx,
       command_tx: None,
 
       cancel_token: CancellationToken::new(),
       _player_manager_handle: None,
-    })
+    }))
   }
 
   async fn subscribe(&mut self) -> Result<()> {

@@ -1,5 +1,3 @@
-use std::future::Future;
-
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "linux")]
@@ -60,17 +58,18 @@ pub struct Command {
 pub type CommandTx = tokio::sync::mpsc::Sender<Command>;
 pub type CommandRx = tokio::sync::mpsc::Receiver<Command>;
 
-pub trait Player: Send
-where
-  Self: Sized,
-{
-  fn init(tx: StateTx) -> impl Future<Output = Result<Self>> + Send;
-  fn subscribe(&mut self) -> impl Future<Output = Result<()>>;
-  fn unsubscribe(&mut self) -> impl Future<Output = Result<()>>;
-  fn send_command(&mut self, command: Command) -> impl Future<Output = Result<()>>;
+#[async_trait::async_trait]
+pub trait Player: Send {
+  async fn init(tx: StateTx) -> Result<Box<Self>>
+  where
+    Self: Sized;
+
+  async fn subscribe(&mut self) -> Result<()>;
+  async fn unsubscribe(&mut self) -> Result<()>;
+  async fn send_command(&mut self, command: Command) -> Result<()>;
 }
 
-pub async fn get_player(tx: StateTx) -> Result<impl Player> {
+pub async fn get_player(tx: StateTx) -> Result<Box<dyn Player>> {
   #[cfg(target_os = "linux")]
   let player = linux::LinuxPlayer::init(tx).await;
   #[cfg(target_os = "macos")]
@@ -78,7 +77,7 @@ pub async fn get_player(tx: StateTx) -> Result<impl Player> {
   #[cfg(target_os = "windows")]
   let player = windows::WindowsPlayer::init(tx).await;
 
-  player
+  Ok(player?)
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

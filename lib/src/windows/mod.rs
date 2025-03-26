@@ -518,16 +518,17 @@ pub struct WindowsPlayer {
   _session_manager_handle: Option<JoinHandle<()>>,
 }
 
+#[async_trait::async_trait]
 impl Player for WindowsPlayer {
   async fn init(tx: StateTx) -> Result<Self> {
     tracing::debug!("initializing windows media player subsystem");
 
-    Ok(Self {
+    Ok(Box::new(Self {
       tx,
       command_tx: None,
       cancel_token: CancellationToken::new(),
       _session_manager_handle: None,
-    })
+    }))
   }
 
   async fn subscribe(&mut self) -> Result<()> {
