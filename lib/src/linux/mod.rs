@@ -18,9 +18,6 @@ use zbus::{
   names::BusName,
 };
 
-// mod media_player2;
-// use media_player2::*;
-
 struct PlayerConnection {
   name: BusName<'static>,
 
@@ -234,8 +231,9 @@ impl PlayerConnection {
       Err(err) => return tracing::debug!("({}) error handling volume: {:?}", self.name.as_str(), err),
     };
 
-    tracing::trace!("({}) volume changed: {:?}", self.name.as_str(), volume);
+    self.state.can_change_volume = true;
     self.state.volume = (volume * 100.0) as u8;
+    tracing::trace!("({}) volume changed: {:?}", self.name.as_str(), self.state.volume);
   }
 
   fn handle_playback_position(&mut self, position: zbus::Result<i64>) {

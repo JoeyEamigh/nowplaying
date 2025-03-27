@@ -9,7 +9,7 @@ use monitoring::{LogMessage, init_logger};
 use napi::{bindgen_prelude::*, threadsafe_function::*, tokio};
 use napi_derive::napi;
 
-use conversion::{NowPlayingMessage, PlayerCommand};
+use conversion::{NowPlayingMessage, PlayerCommand, PlayerCommandData};
 
 use nowplaying::{CommandRx, CommandTx, Player, StateRx, get_player};
 use tokio_util::sync::CancellationToken;
@@ -59,14 +59,16 @@ impl NowPlaying {
 
   #[napi]
   pub async unsafe fn subscribe(&mut self) -> Result<()> {
+    tracing::debug!("subscribing to now playing events");
+    if !self.cancel_token.is_cancelled() {
+      self.cancel_token.cancel();
+    }
+
+    self.cancel_token = CancellationToken::new();
     let (tx, command_rx) = tokio::sync::mpsc::channel(16);
     self.tx = Some(tx);
 
-    let cancel_token = CancellationToken::new();
-    self.cancel_token = cancel_token.clone();
-
-    let callback = Arc::clone(&self.callback);
-    let mut worker = NowPlayingWorker::init(command_rx, callback, cancel_token).await?;
+    let mut worker = NowPlayingWorker::init(command_rx, self.callback.clone(), self.cancel_token.clone()).await?;
     self.handle = Some(tokio::spawn(async move { worker.event_loop().await }));
 
     Ok(())
@@ -74,8 +76,10 @@ impl NowPlaying {
 
   #[napi]
   pub async unsafe fn unsubscribe(&mut self) -> Result<()> {
+    tracing::debug!("unsubscribing from now playing events");
+    self.cancel_token.cancel();
+
     if let Some(handle) = self.handle.take() {
-      self.cancel_token.cancel();
       handle
         .await
         .map_err(|e| napi::Error::from_reason(format!("failed to join worker: {:?}", e)))?;
@@ -86,6 +90,7 @@ impl NowPlaying {
 
   #[napi]
   pub async fn send_command(&self, command: PlayerCommand) -> Result<()> {
+    tracing::debug!("sending command: {:?}", command);
     if let Some(tx) = &self.tx {
       tx.send(command.into())
         .await
@@ -95,6 +100,86 @@ impl NowPlaying {
     }
 
     Ok(())
+  }
+
+  #[napi]
+  pub async fn play(&self, to: Option<String>) -> Result<()> {
+    self
+      .send_command(PlayerCommand {
+        to,
+        data: PlayerCommandData::Play,
+      })
+      .await
+  }
+
+  #[napi]
+  pub async fn pause(&self, to: Option<String>) -> Result<()> {
+    self
+      .send_command(PlayerCommand {
+        to,
+        data: PlayerCommandData::Pause,
+      })
+      .await
+  }
+
+  #[napi]
+  pub async fn play_pause(&self, to: Option<String>) -> Result<()> {
+    self
+      .send_command(PlayerCommand {
+        to,
+        data: PlayerCommandData::PlayPause,
+      })
+      .await
+  }
+
+  #[napi]
+  pub async fn next_track(&self, to: Option<String>) -> Result<()> {
+    self
+      .send_command(PlayerCommand {
+        to,
+        data: PlayerCommandData::NextTrack,
+      })
+      .await
+  }
+
+  #[napi]
+  pub async fn previous_track(&self, to: Option<String>) -> Result<()> {
+    self
+      .send_command(PlayerCommand {
+        to,
+        data: PlayerCommandData::PreviousTrack,
+      })
+      .await
+  }
+
+  #[napi]
+  pub async fn seek_to(&self, position_ms: u32, to: Option<String>) -> Result<()> {
+    self
+      .send_command(PlayerCommand {
+        to,
+        data: PlayerCommandData::SeekTo { position_ms },
+      })
+      .await
+  }
+
+  #[napi]
+  pub async fn set_volume(&self, volume: u8, to: Option<String>) -> Result<()> {
+    self
+      .send_command(PlayerCommand {
+        to,
+        data: PlayerCommandData::SetVolume { volume },
+      })
+      .await
+  }
+
+  #[napi]
+  pub async fn set_shuffle(&self, shuffle: bool, to: Option<String>) -> Result<()> {
+    self
+      .send_command(PlayerCommand {
+        to,
+        data: PlayerCommandData::SetShuffle { shuffle },
+      })
+      .await
   }
 }
 
@@ -116,9 +201,16 @@ impl NowPlayingWorker {
   ) -> Result<Self> {
     let (tx, state_rx) = tokio::sync::mpsc::channel(16);
 
-    let player = get_player(tx)
+    let mut player = get_player(tx)
       .await
       .map_err(|e| napi::Error::from_reason(format!("failed to create player: {:?}", e)))?;
+    tracing::debug!("created player");
+
+    player
+      .subscribe()
+      .await
+      .map_err(|e| napi::Error::from_reason(format!("failed to subscribe to player: {:?}", e)))?;
+    tracing::debug!("subscribed to player");
 
     Ok(Self {
       state_rx,
@@ -150,6 +242,13 @@ impl NowPlayingWorker {
           break;
         }
       }
+    }
+
+    tracing::debug!("event loop exited");
+    if let Err(e) = self.player.unsubscribe().await {
+      tracing::error!("failed to unsubscribe from player: {:?}", e);
+    } else {
+      tracing::debug!("unsubscribed from player, exiting worker");
     }
   }
 }

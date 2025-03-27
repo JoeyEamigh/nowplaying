@@ -5,6 +5,14 @@ export declare class NowPlaying {
   subscribe(): Promise<void>
   unsubscribe(): Promise<void>
   sendCommand(command: PlayerCommand): Promise<void>
+  play(to?: string | undefined | null): Promise<void>
+  pause(to?: string | undefined | null): Promise<void>
+  playPause(to?: string | undefined | null): Promise<void>
+  nextTrack(to?: string | undefined | null): Promise<void>
+  previousTrack(to?: string | undefined | null): Promise<void>
+  seekTo(positionMs: number, to?: string | undefined | null): Promise<void>
+  setVolume(volume: number, to?: string | undefined | null): Promise<void>
+  setShuffle(shuffle: boolean, to?: string | undefined | null): Promise<void>
 }
 
 export interface LogMessage {

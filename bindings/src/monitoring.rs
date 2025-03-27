@@ -111,5 +111,5 @@ pub fn init_logger(tsfn: Option<Arc<LogCallback>>, level_directive: Option<Strin
       .init();
   }
 
-  tracing::info!("initialized logger");
+  tracing::debug!("initialized logger");
 }
