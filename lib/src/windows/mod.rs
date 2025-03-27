@@ -520,7 +520,7 @@ pub struct WindowsPlayer {
 
 #[async_trait::async_trait]
 impl Player for WindowsPlayer {
-  async fn init(tx: StateTx) -> Result<Self> {
+  async fn init(tx: StateTx) -> Result<Box<Self>> {
     tracing::debug!("initializing windows media player subsystem");
 
     Ok(Box::new(Self {

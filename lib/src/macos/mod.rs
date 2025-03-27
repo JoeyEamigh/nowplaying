@@ -283,7 +283,7 @@ impl MacPlayer {
 
 #[async_trait::async_trait]
 impl Player for MacPlayer {
-  async fn init(tx: StateTx) -> Result<Self> {
+  async fn init(tx: StateTx) -> Result<Box<Self>> {
     Ok(Box::new(Self::init(tx).await?))
   }
 
