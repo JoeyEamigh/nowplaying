@@ -1,5 +1,5 @@
 {
-  "name": "nowplaying",
+  "name": "node-nowplaying",
   "version": "0.1.0",
   "description": "a cross-platform node module to get the currently playing song",
   "author": "Joey Eamigh <55670930+JoeyEamigh@users.noreply.github.com>",
