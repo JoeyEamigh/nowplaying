@@ -244,14 +244,15 @@ pub struct MacPlayer {
   _worker_handle: Option<JoinHandle<()>>,
 }
 
-impl MacPlayer {
-  pub async fn init(tx: StateTx) -> Result<Self> {
+#[async_trait::async_trait]
+impl Player for MacPlayer {
+  async fn init(tx: StateTx) -> Result<Box<Self>> {
     unsafe {
       tracing::debug!("initializing media remote framework");
       let bundle_url = CFURL::from_path("/System/Library/PrivateFrameworks/MediaRemote.framework", true).unwrap();
       let bundle = CFBundle::new(bundle_url).unwrap();
 
-      Ok(MacPlayer {
+      Ok(Box::new(MacPlayer {
         state_tx: tx,
         command_tx: None,
 
@@ -276,15 +277,8 @@ impl MacPlayer {
 
         cancel_token: CancellationToken::new(),
         _worker_handle: None,
-      })
+      }))
     }
-  }
-}
-
-#[async_trait::async_trait]
-impl Player for MacPlayer {
-  async fn init(tx: StateTx) -> Result<Box<Self>> {
-    Ok(Box::new(Self::init(tx).await?))
   }
 
   async fn subscribe(&mut self) -> Result<()> {
