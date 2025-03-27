@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
 
-#[cfg(feature = "linux")]
+#[cfg(target_os = "linux")]
 mod linux;
-#[cfg(feature = "macos")]
+#[cfg(target_os = "macos")]
 mod macos;
-#[cfg(feature = "windows")]
+#[cfg(target_os = "windows")]
 mod windows;
 
 #[derive(Default, derive_more::Debug, Serialize, Deserialize, Clone)]
@@ -84,23 +84,23 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug, thiserror::Error)]
 #[allow(clippy::large_enum_variant)]
 pub enum Error {
-  #[cfg(feature = "linux")]
+  #[cfg(target_os = "linux")]
   #[error(transparent)]
   ZBus(#[from] zbus::Error),
-  #[cfg(feature = "linux")]
+  #[cfg(target_os = "linux")]
   #[error(transparent)]
   ZBusFdo(#[from] zbus::fdo::Error),
-  #[cfg(feature = "linux")]
+  #[cfg(target_os = "linux")]
   #[error(transparent)]
   ZBusZVariant(#[from] zbus::zvariant::Error),
   #[error(transparent)]
   StateCommunication(#[from] tokio::sync::mpsc::error::SendError<NowPlaying>),
   #[error(transparent)]
   CommandCommunication(#[from] tokio::sync::mpsc::error::SendError<Command>),
-  #[cfg(feature = "windows")]
+  #[cfg(target_os = "windows")]
   #[error(transparent)]
   Windows(#[from] windows::Error),
-  #[cfg(feature = "windows")]
+  #[cfg(target_os = "windows")]
   #[error(transparent)]
   JoinHandle(#[from] tokio::task::JoinError),
 }

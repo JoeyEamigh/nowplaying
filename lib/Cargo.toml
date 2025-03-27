@@ -4,32 +4,8 @@ version = "0.1.0"
 edition = "2024"
 default-run = "nowplaying"
 
+
 [dependencies]
-# macos
-objc2 = { version = "0.5.2", optional = true }
-objc2-foundation = { version = "0.2.2", features = ["all"], optional = true }
-block2 = { version = "0.5.1", optional = true }
-core-foundation = { version = "0.10.0", optional = true }
-dispatch2 = { version = "0.1.0", optional = true }
-# libloading = "0.8.6"
-
-# windows
-windows = { version = "0.59.0", features = [
-  "Media",
-  "Media_Control",
-  "Media_Playback",
-  "Foundation",
-  "Foundation_Collections",
-  "Storage_Streams",
-], optional = true }
-
-# linux
-zbus = { version = "5.5.0", features = ["tokio"], optional = true }
-zvariant = { version = "5.4.0", optional = true }
-
-# shared (macos, windows
-base64 = { version = "0.22.1", optional = true }
-
 # workspace
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
@@ -44,16 +20,26 @@ thiserror = "2.0.12"
 futures = "0.3.31"
 async-trait = "0.1.88"
 
+# platform-specific dependencies
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "0.59.0", features = [
+  "Media",
+  "Media_Control",
+  "Media_Playback",
+  "Foundation",
+  "Foundation_Collections",
+  "Storage_Streams",
+] }
+base64 = { version = "0.22.1" }
 
-[features]
-default = ["linux"]
-macos = [
-  "dep:objc2",
-  "dep:objc2-foundation",
-  "dep:block2",
-  "dep:core-foundation",
-  "dep:dispatch2",
-  "dep:base64",
-]
-windows = ["dep:windows", "dep:base64"]
-linux = ["dep:zbus", "dep:zvariant"]
+[target.'cfg(target_os = "linux")'.dependencies]
+zbus = { version = "5.5.0", features = ["tokio"] }
+zvariant = { version = "5.4.0" }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = { version = "0.5.2" }
+objc2-foundation = { version = "0.2.2", features = ["all"] }
+block2 = { version = "0.5.1" }
+core-foundation = { version = "0.10.0" }
+dispatch2 = { version = "0.1.0" }
+base64 = { version = "0.22.1" }
